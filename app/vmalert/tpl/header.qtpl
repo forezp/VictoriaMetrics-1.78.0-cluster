@@ -1,0 +1,57 @@
+{% func Header(title string, pages []NavItem) %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>vmalert{% if title != "" %} - {%s title %}{% endif %}</title>
+    <link href="static/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        body{
+          min-height: 75rem;
+          padding-top: 4.5rem;
+        }
+        .group-heading {
+            cursor: pointer;
+            padding: 5px;
+            margin-top: 5px;
+            position: relative;
+        }
+        .group-heading .anchor {
+            position:absolute;
+            top:-60px;
+        }
+        .group-heading span {
+            float: right;
+            margin-left: 5px;
+            margin-right: 5px;
+        }
+         .group-heading:hover {
+            background-color: #f8f9fa!important;
+        }
+        .table {
+            table-layout: fixed;
+        }
+        .table .error-cell{
+            word-break: break-word;
+            font-size: 14px;
+        }
+        pre {
+            overflow: scroll;
+            min-height: 30px;
+            max-width: 100%;
+        }
+        pre::-webkit-scrollbar {
+          -webkit-appearance: none;
+          width: 0px;
+          height: 5px;
+        }
+        pre::-webkit-scrollbar-thumb {
+          border-radius: 5px;
+          background-color: rgba(0,0,0,.5);
+          -webkit-box-shadow: 0 0 1px rgba(255,255,255,.5);
+        }
+    </style>
+</head>
+<body>
+    {%= PrintNavItems(title, pages) %}
+    <main class="px-2">
+{% endfunc %}

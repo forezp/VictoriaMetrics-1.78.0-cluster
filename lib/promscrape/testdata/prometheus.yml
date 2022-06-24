@@ -1,0 +1,5 @@
+scrape_configs:
+- job_name: foo
+  file_sd_configs:
+  - files: ["file_sd_*.yml"]
+  - files: ["file_sd.json"]
