@@ -58,6 +58,7 @@ type Server struct {
 }
 
 // NewServer returns new Server.
+// 创建vmselect 和vminsert的TcpListener以及连接的map
 func NewServer(vminsertAddr, vmselectAddr string, storage *storage.Storage) (*Server, error) {
 	vminsertLN, err := netutil.NewTCPListener("vminsert", vminsertAddr, nil)
 	if err != nil {
@@ -82,6 +83,7 @@ func NewServer(vminsertAddr, vmselectAddr string, storage *storage.Storage) (*Se
 }
 
 // RunVMInsert runs a server accepting connections from vminsert.
+//开启vminsert 处理连接的服务
 func (s *Server) RunVMInsert() {
 	logger.Infof("accepting vminsert conns at %s", s.vminsertLN.Addr())
 	for {

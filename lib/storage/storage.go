@@ -67,11 +67,14 @@ type Storage struct {
 	// lock file for exclusive access to the storage on the given path.
 	flockF *os.File
 
+	//index db ，需要交换
 	idbCurr atomic.Value
 
+	//存data数据
 	tb *table
 
 	// Series cardinality limiters.
+	//限制插入的数量
 	hourlySeriesLimiter *bloomfilter.Limiter
 	dailySeriesLimiter  *bloomfilter.Limiter
 
@@ -88,6 +91,7 @@ type Storage struct {
 	dateMetricIDCache *dateMetricIDCache
 
 	// Fast cache for MetricID values occurred during the current hour.
+	//metricId -> tsid
 	currHourMetricIDs atomic.Value
 
 	// Fast cache for MetricID values occurred during the previous hour.

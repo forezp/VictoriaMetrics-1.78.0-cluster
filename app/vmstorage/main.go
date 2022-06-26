@@ -24,6 +24,7 @@ import (
 )
 
 var (
+	//默认单位是month 即一个月
 	retentionPeriod   = flagutil.NewDuration("retentionPeriod", "1", "Data with timestamps outside the retentionPeriod is automatically deleted")
 	httpListenAddr    = flag.String("httpListenAddr", ":8482", "Address to listen for http connections")
 	storageDataPath   = flag.String("storageDataPath", "vmstorage-data", "Path to storage data")
@@ -104,11 +105,12 @@ func main() {
 	registerStorageMetrics(strg)
 
 	common.StartUnmarshalWorkers()
+	// 创建vmselect 和vminsert的TcpListener以及连接的map
 	srv, err := transport.NewServer(*vminsertAddr, *vmselectAddr, strg)
 	if err != nil {
 		logger.Fatalf("cannot create a server with vminsertAddr=%s, vmselectAddr=%s: %s", *vminsertAddr, *vmselectAddr, err)
 	}
-
+	//开启vminsert的连接处理服务
 	go srv.RunVMInsert()
 	go srv.RunVMSelect()
 
