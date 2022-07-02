@@ -78,6 +78,7 @@ func main() {
 	if len(*storageNodes) == 0 {
 		logger.Fatalf("missing -storageNode arg")
 	}
+	//初始化storage连接
 	netstorage.InitStorageNodes(*storageNodes)
 	logger.Infof("started netstorage in %.3f seconds", time.Since(startTime).Seconds())
 
@@ -87,16 +88,20 @@ func main() {
 		netstorage.InitTmpBlocksDir(tmpDataPath)
 		promql.InitRollupResultCache(*cacheDataPath + "/rollupResult")
 	} else {
+		//初始化storage的缓存结果
 		netstorage.InitTmpBlocksDir("")
+		//初始化聚合计算的结果
 		promql.InitRollupResultCache("")
 	}
+	//并发的控制
 	concurrencyCh = make(chan struct{}, *maxConcurrentRequests)
+	//初始化告警的代理
 	initVMAlertProxy()
 
 	go func() {
+		//开启http server
 		httpserver.Serve(*httpListenAddr, requestHandler)
 	}()
-
 	sig := procutil.WaitForSigterm()
 	logger.Infof("service received signal %s", sig)
 
@@ -148,16 +153,21 @@ func requestHandler(w http.ResponseWriter, r *http.Request) bool {
 	startTime := time.Now()
 	defer requestDuration.UpdateDuration(startTime)
 	tracerEnabled := searchutils.GetBool(r, "trace")
+	//新建tracer
 	qt := querytracer.New(tracerEnabled, r.URL.Path)
 
 	// Limit the number of concurrent queries.
+	// 控制并发的数量
 	select {
 	case concurrencyCh <- struct{}{}:
 		defer func() { <-concurrencyCh }()
 	default:
 		// Sleep for a while until giving up. This should resolve short bursts in requests.
+		// 等待，直到别的并发释放信号量
 		concurrencyLimitReached.Inc()
+		//获取最大的等待时间
 		d := searchutils.GetMaxQueryDuration(r)
+		//默认最大的等待时间10s
 		if d > *maxQueueDuration {
 			d = *maxQueueDuration
 		}
@@ -168,6 +178,7 @@ func requestHandler(w http.ResponseWriter, r *http.Request) bool {
 			timerpool.Put(t)
 			defer func() { <-concurrencyCh }()
 		case <-t.C:
+			//超过时间，限流
 			timerpool.Put(t)
 			concurrencyLimitTimeout.Inc()
 			err := &httpserver.ErrorWithStatusCode{
@@ -182,6 +193,7 @@ func requestHandler(w http.ResponseWriter, r *http.Request) bool {
 		}
 	}
 
+	//慢查询默认位5s
 	if *logSlowQueryDuration > 0 {
 		actualStartTime := time.Now()
 		defer func() {
@@ -197,6 +209,7 @@ func requestHandler(w http.ResponseWriter, r *http.Request) bool {
 	}
 
 	path := strings.Replace(r.URL.Path, "//", "/", -1)
+	//处理清空聚合请求的接口
 	if path == "/internal/resetRollupResultCache" {
 		if len(*resetCacheAuthKey) > 0 && r.FormValue("authKey") != *resetCacheAuthKey {
 			sendPrometheusError(w, r, fmt.Errorf("invalid authKey=%q for %q", r.FormValue("authKey"), path))
@@ -228,8 +241,10 @@ func requestHandler(w http.ResponseWriter, r *http.Request) bool {
 	}
 	switch p.Prefix {
 	case "select":
+		//处理查询的逻辑
 		return selectHandler(qt, startTime, w, r, p, at)
 	case "delete":
+		//处理删除的逻辑
 		return deleteHandler(startTime, w, r, p, at)
 	default:
 		// This is not our link
@@ -248,6 +263,7 @@ func selectHandler(qt *querytracer.Tracer, startTime time.Time, w http.ResponseW
 		httpRequests.Get(at).Inc()
 		httpRequestsDuration.Get(at).Add(int(time.Since(startTime).Milliseconds()))
 	}()
+	//没有任何路径的处理的逻辑
 	if p.Suffix == "" {
 		if r.Method != "GET" {
 			return false
