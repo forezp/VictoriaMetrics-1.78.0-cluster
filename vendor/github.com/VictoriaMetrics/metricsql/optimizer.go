@@ -10,9 +10,9 @@ import (
 //
 // It performs the following optimizations:
 //
-// - Adds missing filters to `foo{filters1} op bar{filters2}`
-//   according to https://utcc.utoronto.ca/~cks/space/blog/sysadmin/PrometheusLabelNonOptimization
-//   I.e. such query is converted to `foo{filters1, filters2} op bar{filters1, filters2}`
+//   - Adds missing filters to `foo{filters1} op bar{filters2}`
+//     according to https://utcc.utoronto.ca/~cks/space/blog/sysadmin/PrometheusLabelNonOptimization
+//     I.e. such query is converted to `foo{filters1, filters2} op bar{filters1, filters2}`
 func Optimize(e Expr) Expr {
 	if !canOptimize(e) {
 		return e
@@ -386,7 +386,7 @@ func getTransformArgIdxForOptimization(funcName string, args []Expr) int {
 		return -1
 	}
 	switch funcName {
-	case "", "absent", "scalar", "union", "vector":
+	case "", "absent", "scalar", "union", "vector", "range_normalize":
 		return -1
 	case "end", "now", "pi", "ru", "start", "step", "time":
 		return -1
